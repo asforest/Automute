@@ -18,7 +18,9 @@ import net.mamoe.mirai.event.events.BotEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
+import okio.ByteString.Companion.encode
 import org.example.qqgroupadmin.PluginConf.provideDelegate
+import java.nio.charset.Charset
 import java.util.*
 
 object QQGroupAdminPlugin : KotlinPlugin(
@@ -72,14 +74,15 @@ object QQGroupAdminPlugin : KotlinPlugin(
                         val times = MuteData.muted[qq]
                         val timesMax = PluginConf.toleration
 
-                        val msg0 = message.toForwardMessage(bot.id, bot.nick)
+//                        val msg0 = message.toForwardMessage(bot.id, bot.nick)
                         val msg1 = "$nick($qq)触发关键字($kw)($times/$timesMax)"+(if (kick) "(已踢)" else "")
+                        val contentInB64 = Base64.getEncoder().encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
 
                         for (adm in PluginConf.admins)
                         {
                             val to = bot.getFriend(adm)
-                            to?.sendMessage(msg0)
-                            to?.sendMessage(msg1)
+//                            to?.sendMessage(msg0)
+                            to?.sendMessage(msg1+"\n"+contentInB64)
                         }
 
                         // 实际动作
@@ -154,7 +157,7 @@ object QQGroupAdminPluginCommand: CompositeCommand(
 
     @SubCommand
     @Description("添加关键词")
-    suspend fun CommandSender.kw(action: String, content: String ="")
+    suspend fun CommandSender.kw(action: String="", content: String="")
     {
         when(action)
         {
@@ -199,7 +202,7 @@ object QQGroupAdminPluginCommand: CompositeCommand(
             }
 
             else -> {
-                sendMessage("未知action($action)")
+                sendMessage("未知action($action), 可用值: add <kw>, remove <index>, list")
             }
         }
     }
