@@ -9,7 +9,7 @@ import net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader
 suspend fun main() {
     MiraiConsoleTerminalLoader.startAsDaemon()
 
-    val pluginInstance = QQGroupAdminPlugin
+    val pluginInstance = QQGroupAdminPluginMain
 
     pluginInstance.load() // 主动加载插件, Console 会调用 GroupAdmin.onLoad
     pluginInstance.enable() // 主动启用插件, Console 会调用 GroupAdmin.onEnable
