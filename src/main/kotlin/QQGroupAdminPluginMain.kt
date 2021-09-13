@@ -15,7 +15,7 @@ import okio.ByteString.Companion.encode
 import org.example.qqgroupadmin.config.ForbiddenKeywords
 import org.example.qqgroupadmin.config.MuteData
 import org.example.qqgroupadmin.config.PluginConfig
-import org.example.qqgroupadmin.config.command.QQGroupAdminPluginCommand
+import org.example.qqgroupadmin.command.QQGroupAdminPluginCommand
 import java.nio.charset.Charset
 import java.util.*
 
@@ -33,8 +33,7 @@ object QQGroupAdminPluginMain : KotlinPlugin(JvmPluginDescription.loadFromResour
         // 注册指令
         QQGroupAdminPluginCommand.register()
 
-        var channel = GlobalEventChannel.filter { it is BotEvent }
-        channel.subscribeAlways<GroupMessageEvent> {
+        GlobalEventChannel.filter { it is BotEvent }.subscribeAlways<GroupMessageEvent> {
             if(group.id !in PluginConfig.groupsActived)
                 return@subscribeAlways
 
@@ -53,10 +52,10 @@ object QQGroupAdminPluginMain : KotlinPlugin(JvmPluginDescription.loadFromResour
                     val msg = message.content
 
                     // 如果触发敏感词
-                    if (msg.lowercase(Locale.getDefault()).contains(kw))
+                    if (Regex(kw, RegexOption.IGNORE_CASE).containsMatchIn(msg))
                     {
-//                        logger.info("$nick($qq) 触发了禁止关键字($kw): $msg")
-                        logger.warning("$nick($qq) 触发了禁止关键字($kw)")
+                        logger.warning("$nick($qq) 触发关键字($kw)")
+                        logger.warning("以下是原消息: $msg")
 
                         if(qq !in MuteData.muted)
                             MuteData.muted[qq] = 0
@@ -76,7 +75,6 @@ object QQGroupAdminPluginMain : KotlinPlugin(JvmPluginDescription.loadFromResour
                         for (adm in PluginConfig.admins)
                         {
                             val to = bot.getFriend(adm)
-//                            to?.sendMessage(msg0)
                             to?.sendMessage(msg1+"\n"+contentInB64)
                         }
 

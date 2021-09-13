@@ -7,9 +7,16 @@ plugins {
 }
 
 group = "org.example.qqgroupadmin"
-version = "0.1"
+version = "0.4"
 
 repositories {
 //    maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
+}
+
+
+tasks.register("buildWithCopy", Copy::class) {
+    dependsOn(tasks.named("buildPlugin"))
+    from("build/mirai/qqgroup-admin-0.4.mirai.jar")
+    into("D:/mirai/plugins")
 }
