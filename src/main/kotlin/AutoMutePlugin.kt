@@ -5,6 +5,7 @@ import com.github.asforest.automute.config.Keywords
 import com.github.asforest.automute.config.MainConfig
 import com.github.asforest.automute.config.MuteData
 import com.github.asforest.automute.config.Speakings
+import com.github.asforest.automute.exception.InterruptCheckException
 import com.github.asforest.automute.util.MiraiUtil
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.permission.PermissionService
@@ -48,17 +49,19 @@ object AutoMutePlugin : KotlinPlugin(MiraiUtil.pluginDescription)
                 val qq = member.id
                 val nick = member.nick
                 val msg = message.content
-                var speakings = if(qq in Speakings.speakings.keys) Speakings.speakings[qq]!! else 1
+                val speakings = if(qq in Speakings.speakings.keys) Speakings.speakings[qq]!! else 1
 
                 Speakings.speakings[qq] = speakings + 1
 
                 suspend fun q(cb: suspend (p: MutableList<String>, prio: String) -> Unit)
                 {
-                    if(speakings <= MainConfig.highThreshold)
-                        cb(Keywords.high, "high")
-                    if (speakings <= MainConfig.mediumThreshold)
-                         cb(Keywords.medium, "medium")
-                    cb(Keywords.low, "low")
+                    try {
+                        if(speakings <= MainConfig.highThreshold)
+                            cb(Keywords.high, "high")
+                        if (speakings <= MainConfig.mediumThreshold)
+                             cb(Keywords.medium, "medium")
+                        cb(Keywords.low, "low")
+                    } catch (e: InterruptCheckException) {}
                 }
 
                 q { p, prio ->
@@ -104,7 +107,7 @@ object AutoMutePlugin : KotlinPlugin(MiraiUtil.pluginDescription)
                                 }
                             }
 
-                            break
+                            throw InterruptCheckException()
                         }
                     }
                 }
