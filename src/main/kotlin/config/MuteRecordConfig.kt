@@ -1,11 +1,12 @@
 package com.github.asforest.automute.config
 
+import com.github.asforest.automute.AutoMutePlugin.save
 import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.value
 
 object MuteRecordConfig: AutoSavePluginConfig("mute-data")
 {
-    var muted: MutableMap<Long, Int> by value(mutableMapOf())
+    private var muted: MutableMap<Long, Int> by value(mutableMapOf())
 
     /**
      * 获取曾经惯犯次数
@@ -19,5 +20,6 @@ object MuteRecordConfig: AutoSavePluginConfig("mute-data")
      */
     fun addMutedCount(qq: Long) {
         muted[qq] = getMutedCount(qq) + 1
+        save()
     }
 }
