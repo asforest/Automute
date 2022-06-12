@@ -2,13 +2,12 @@ package com.github.asforest.automute
 
 import com.github.asforest.automute.command.AutoMuteMainCommand
 import com.github.asforest.automute.config.Keywords
-import com.github.asforest.automute.config.MainConfig
-import com.github.asforest.automute.config.MuteData
-import com.github.asforest.automute.config.Speakings
-import com.github.asforest.automute.exception.InterruptCheckException
-import com.github.asforest.automute.util.MiraiUtil
+import com.github.asforest.automute.config.MuteRecordConfig
+import com.github.asforest.automute.config.PluginConfig
+import com.github.asforest.automute.config.SpeakingsConfig
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.permission.PermissionService
+import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.MemberPermission
 import net.mamoe.mirai.contact.NormalMember
@@ -21,9 +20,12 @@ import okio.ByteString.Companion.encode
 import java.nio.charset.Charset
 import java.util.*
 
-object AutoMutePlugin : KotlinPlugin(MiraiUtil.pluginDescription)
-{
-    val permssion_mainCommand by lazy { PermissionService.INSTANCE.register(AutoMutePlugin.permissionId("all1"), "AutoMutePlugin主指令") }
+object AutoMutePlugin : KotlinPlugin(JvmPluginDescription(
+    id = "com.github.asforest.automute",
+    version = "1.0.0",
+    name = "AutoMute",
+)) {
+    val permssion_mainCommand by lazy { PermissionService.INSTANCE.register(AutoMutePlugin.permissionId("all"), "AutoMutePlugin主指令") }
 
     override fun onEnable()
     {
@@ -36,93 +38,70 @@ object AutoMutePlugin : KotlinPlugin(MiraiUtil.pluginDescription)
         AutoMuteMainCommand.register()
 
         GlobalEventChannel.filter { it is BotEvent }.subscribeAlways<GroupMessageEvent> {
-            if(group.id !in MainConfig.groupsActived)
+            if(!PluginConfig.groupsActivated.any { it == group.id })
                 return@subscribeAlways
 
             if(bot.getGroup(group.id)!!.botPermission == MemberPermission.MEMBER)
                 return@subscribeAlways
 
+            val qq = sender.id
+            val nick = sender.nick
+            val msg = message.content
+            val speakings = SpeakingsConfig.getSpeakings(qq) // 是第几次发言
+
+            // 发言次数+1
+            SpeakingsConfig.addSpeakings(qq)
+
             // 只对普通群成员生效(管理员和群主无效)
-            if(sender is NormalMember && sender.permission == MemberPermission.MEMBER)
-            {
-                val member = sender as NormalMember
-                val qq = member.id
-                val nick = member.nick
-                val msg = message.content
-                val speakings = if(qq in Speakings.speakings.keys) Speakings.speakings[qq]!! else 1
+            if(sender.permission != MemberPermission.MEMBER)
+                return@subscribeAlways
 
-                Speakings.speakings[qq] = speakings + 1
+            // 测试是否违规
+            val isViolated = Keywords.isSpeakingViolated(msg, speakings) ?: return@subscribeAlways
 
-                suspend fun q(cb: suspend (p: MutableList<String>, prio: String) -> Unit)
-                {
-                    try {
-                        if(speakings <= MainConfig.highThreshold)
-                            cb(Keywords.high, "high")
-                        if (speakings <= MainConfig.mediumThreshold)
-                             cb(Keywords.medium, "medium")
-                        cb(Keywords.low, "low")
-                    } catch (e: InterruptCheckException) {}
-                }
+            // 曾经的违规次数
+            val violations = MuteRecordConfig.getMutedCount(qq)
 
-                q { p, prio ->
-                    for (kw in p)
-                    {
-                        // 如果触发敏感词
-                        if (Regex(kw, RegexOption.IGNORE_CASE).containsMatchIn(msg))
-                        {
-                            logger.warning("$nick($qq) 触发关键字($kw)")
-                            logger.warning("以下是原消息: $msg")
+            // 违规次数+1
+            MuteRecordConfig.addMutedCount(qq)
 
-                            if(qq !in MuteData.muted)
-                                MuteData.muted[qq] = 0
+            // 已经没有改过自新的机会了
+            val isOutOfToleration = violations >= PluginConfig.toleration
 
-                            val timesMuted = MuteData.muted[qq]!!
-                            MuteData.muted[qq] = timesMuted + 1
-                            val kick = timesMuted >= MainConfig.toleration
+            // 构建管理员报告消息
+            val rawMessageContentBase64 = Base64.getEncoder()
+                .encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
+            val reportMessage = "检测到 $nick($qq) 在QQ群聊 ${group.name}(${group.id}) 的发言违反了关键字【${isViolated.keyword}】，" +
+                    "次数($violations/${PluginConfig.toleration})" +
+                    (if (isOutOfToleration) "(已踢出群聊)" else "（已禁言）") +
+                    "\n以下原始消息(base64)：\n$rawMessageContentBase64"
 
-                            // 转发样本数据
-                            val times = MuteData.muted[qq]
-                            val timesMax = MainConfig.toleration
-
-//                        val msg0 = message.toForwardMessage(bot.id, bot.nick)
-                            val msg1 = "$nick($qq)触发关键字($kw)($times/$timesMax)($prio)"+(if (kick) "(已踢)" else "")
-                            val contentInB64 = Base64.getEncoder().encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
-
-                            for (adm in MainConfig.admins)
-                            {
-                                val to = bot.getFriend(adm)
-                                to?.sendMessage(msg1+"\n"+contentInB64)
-                            }
-
-                            // 实际动作
-                            if(MainConfig.enabled)
-                            {
-                                message.recall()
-
-                                if(kick)
-                                {
-                                    member.kick(MainConfig.kickMessage, MainConfig.blockWhenKick)
-                                } else {
-                                    member.mute(MainConfig.muteDurationInSec)
-                                }
-                            }
-
-                            throw InterruptCheckException()
-                        }
-                    }
-                }
-
-
+            // 向所有管理员报告
+            for (adm in PluginConfig.admins) {
+                val to = bot.getFriend(adm)
+                to?.sendMessage(reportMessage)
             }
+
+            // 实际动作：撤回消息+禁言或者踢出
+            if (!PluginConfig.dryRun) {
+                message.recall()
+
+                if (isOutOfToleration) {
+                    (sender as NormalMember).kick(PluginConfig.kickMessage, PluginConfig.blockWhenKick)
+                } else {
+                    (sender as NormalMember).mute(PluginConfig.muteDuration)
+                }
+            }
+
         }
     }
 
     fun reloadConf()
     {
-        MainConfig.reload()
-        MuteData.reload()
-        Keywords.reload()
-        Speakings.reload()
+        PluginConfig.read(saveDefault = true)
+        MuteRecordConfig.reload()
+        Keywords.read(saveDefault = true)
+        SpeakingsConfig.reload()
 
         logger.info("Reloaded!")
     }

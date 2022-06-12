@@ -1,52 +1,53 @@
 import java.util.Date
 import java.text.SimpleDateFormat
+import net.mamoe.mirai.console.gradle.BuildMiraiPluginV2
 
 val gitTagName: String? get() = Regex("(?<=refs/tags/).*").find(System.getenv("GITHUB_REF") ?: "")?.value
 val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
 
 group = "com.github.asforest"
-version = gitTagName ?: "0.4"
+version = gitTagName ?: "0.0.0"
 
 plugins {
-    val kotlinVersion = "1.5.10"
+    val kotlinVersion = "1.6.10"
+    val miraiVersion = "2.11.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
-
-    id("net.mamoe.mirai-console") version "2.7.0"
+    id("net.mamoe.mirai-console") version miraiVersion
 }
 
 repositories {
-//    maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
 
-tasks.register("buildWithManifest") {
-    dependsOn(tasks.named("buildPlugin"))
+dependencies {
+    implementation("org.yaml:snakeyaml:1.30")
+}
 
-    tasks.named<net.mamoe.mirai.console.gradle.BuildMiraiPluginTask>("buildPlugin").get().apply {
+afterEvaluate {
+    tasks.named<BuildMiraiPluginV2>("buildPlugin") {
+        // 在manifest里添加信息
         manifest {
-            attributes("Mirai-Plugin-Id" to "$group.automute")
-            attributes("Mirai-Plugin-Name" to "AutoMute")
             attributes("Mirai-Plugin-Version" to archiveVersion.get())
-            attributes("Mirai-Plugin-Author" to "Asforest")
             attributes("Git-Commit" to (gitCommitSha ?: ""))
             attributes("Compile-Time" to timestamp)
-            attributes("Compile-Time-Ms" to System.currentTimeMillis())
         }
     }
 }
 
-tasks.register("developing", Copy::class) {
-    dependsOn(tasks.named("buildWithManifest"))
+tasks.register<Copy>("develop") {
+    val buildMiraiPluginTask = tasks.named<BuildMiraiPluginV2>("buildPlugin")
+    dependsOn(buildMiraiPluginTask)
 
-    val archive = project.buildDir.path+File.separator+"mirai"+
-            File.separator+project.name+"-"+version+".mirai.jar"
+    val archive = buildMiraiPluginTask.get().archiveFile.get().asFile
+    val outputPath = System.getenv()["DBG"]?.replace("/", "\\")
+    val outputDir = outputPath?.run { File(this) }
+        ?.run { if(!exists() || !isDirectory) null else this }
 
-    val env = System.getenv()["PluginDebugDir"]
-        ?: throw RuntimeException("The environmental variable 'PluginDebugDir' is not set")
-    if(!File(env).run { !exists() || isDirectory })
-        throw RuntimeException("The 'PluginDebugDir' $env does not exist or is a file")
-
-    from(archive).into(env)
+    if(outputDir != null)
+    {
+        from(archive).into(outputPath)
+        println("Copy $archive -> $outputPath")
+    }
 }

@@ -2,8 +2,7 @@ package com.github.asforest.automute.command
 
 import com.github.asforest.automute.AutoMutePlugin
 import com.github.asforest.automute.config.Keywords
-import com.github.asforest.automute.config.MainConfig
-import com.github.asforest.automute.config.MuteData
+import com.github.asforest.automute.config.PluginConfig
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.command.ConsoleCommandSender
@@ -21,142 +20,26 @@ object AutoMuteMainCommand: CompositeCommand(
     {
         AutoMutePlugin.reloadConf()
         sendMessage("重新加载完成")
-        config()
     }
 
     @SubCommand
-    @Description("添加关键词")
-    suspend fun CommandSender.kw(action: String ="", priority: String ="", content: String ="")
+    @Description("显示当前配置文件和关键字列表")
+    suspend fun CommandSender.info()
     {
-        if(action != "add" && action != "remove" && action != "list") {
-            sendMessage("未知action($action), 可用值: add <priority> <kw>, remove <index>, list")
-            return
+        val c = PluginConfig
+        val output = "仅通知管理: ${c.dryRun}\n" +
+                "生效的群聊：${c.groupsActivated}\n" +
+                "总谅解次数：${c.toleration}\n" +
+                "禁言时长秒：${c.muteDuration}\n" +
+                "踢出时消息：${c.kickMessage}\n" +
+                "踢出时拉黑：${c.blockWhenKick}\n" +
+                "管理员列表：${c.admins}\n\n"
+
+        val output2 = Keywords.restrictionLevels.withIndex().joinToString("\n\n") {
+            "规则${it.index}（检测发言数量：${it.value.level}）：\n" +
+                    it.value.keywords.joinToString("\n") { i -> "- $i" }
         }
 
-        if(priority!="high" && priority!="medium" && priority!="low")
-        {
-            sendMessage("找不到优先级: $priority, 可用值: high, medium, low")
-            return
-        }
-
-        suspend fun q(cb: suspend (p: MutableList<String>) -> Unit)
-        {
-            if(priority == "high")
-            {
-                cb(Keywords.high)
-            } else if (priority == "medium") {
-                cb(Keywords.medium)
-            } else if (priority == "low") {
-                cb(Keywords.low)
-            }
-        }
-
-        when(action)
-        {
-            "add" -> {
-                val _content = content.trim()
-
-                if(_content.isEmpty())
-                {
-                    sendMessage("content不能为空")
-                    return
-                }
-
-                q {
-                    if(_content in it)
-                        Keywords.high.remove(_content)
-                    it += _content
-                    sendMessage("添加成功($_content)")
-                }
-            }
-
-            "remove" -> {
-                q {
-                    var idx = -1
-                    try {
-                        idx = content.toInt()
-
-                        if(idx >= it.size)
-                        {
-                            sendMessage("索引($content)过大，范围:(0 ~ ${it.size - 1})")
-                        } else if (idx < 0) {
-                            sendMessage("索引($content)过小，最小只能是0")
-                        } else {
-                            sendMessage("已移除(${it[idx]})")
-                            it.removeAt(idx)
-                        }
-
-                    } catch (e: NumberFormatException) {
-                        sendMessage("索引($content)不是一个数字")
-                    }
-                }
-            }
-
-            "list" -> {
-                q {
-                    var output = ""
-                    for((k, v) in it.withIndex())
-                    {
-                        output += "$k: $v\n"
-                    }
-                    sendMessage(output)
-                }
-            }
-        }
-    }
-
-    @SubCommand
-    @Description("显示所有关键字")
-    suspend fun CommandSender.kwlist()
-    {
-        var output = ""
-        suspend fun q(cb: suspend (p: MutableList<String>) -> Unit)
-        {
-            output += "-----High-----\n"
-            cb(Keywords.high)
-            output += "-----Medium-----\n"
-            cb(Keywords.medium)
-            output += "-----Low-----\n"
-            cb(Keywords.low)
-        }
-        q {
-            for((k, v) in it.withIndex())
-                output += "$k: $v\n"
-        }
-        sendMessage(output)
-    }
-
-    @SubCommand
-    @Description("显示当前配置")
-    suspend fun CommandSender.config()
-    {
-        var output = ""
-        for (vn in MainConfig.valueNodes)
-        {
-            output += vn.valueName+": "+vn.value+"\n"
-        }
-        sendMessage(output)
-    }
-
-    @SubCommand
-    @Description("显示当前违规信息")
-    suspend fun CommandSender.status()
-    {
-        var output = ""
-        for (vn in MuteData.muted)
-        {
-            output += "${vn.key}: ${vn.value}\n"
-        }
-        sendMessage(output)
-    }
-
-    @SubCommand
-    @Description("设置某用户的违规次数")
-    suspend fun CommandSender.set(
-        @Name("QQ号") qqnumber: Long,
-        @Name("违规次数") count: Int)
-    {
-        MuteData.muted[qqnumber] = count.coerceIn(0, 10000)
-        sendMessage("已设置 用户($qqnumber) 为 ${MuteData.muted[qqnumber]}")
+        sendMessage(output + output2)
     }
 }
