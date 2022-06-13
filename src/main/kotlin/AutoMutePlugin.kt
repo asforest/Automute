@@ -49,15 +49,19 @@ object AutoMutePlugin : KotlinPlugin(JvmPluginDescription(
             val msg = message.content
             val speakings = SpeakingsConfig.getSpeakings(qq) // 是第几次发言
 
-            // 发言次数+1
-            SpeakingsConfig.addSpeakings(qq)
+            // 测试是否违规
+            val isViolated = Keywords.isSpeakingViolated(msg, speakings)
+
+            // 没有违规则发言次数+1
+            if (isViolated == null)
+            {
+                SpeakingsConfig.addSpeakings(qq)
+                return@subscribeAlways
+            }
 
             // 只对普通群成员生效(管理员和群主无效)
             if(sender.permission != MemberPermission.MEMBER)
                 return@subscribeAlways
-
-            // 测试是否违规
-            val isViolated = Keywords.isSpeakingViolated(msg, speakings) ?: return@subscribeAlways
 
             // 曾经的违规次数
             val violations = MuteRecordConfig.getMutedCount(qq)
