@@ -12,7 +12,10 @@ object Keywords: YamlConfig("keywords.yml")
     fun isSpeakingViolated(text: String, speakings: Int): ViolationEvent?
     {
         return restrictionLevels.firstNotNullOfOrNull {
-            if(speakings < it.level) Pair(it, it.testKeywords(text)) else null
+            if(speakings < it.level || it.level <= 0)
+                Pair(it, it.testKeywords(text))
+            else
+                null
         }?.run { second?.let { ViolationEvent(it, first) } }
     }
 
