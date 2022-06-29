@@ -33,7 +33,8 @@ object AutoMuteMainCommand: CompositeCommand(
                 "禁言时长秒：${c.muteDuration}\n" +
                 "踢出时消息：${c.kickMessage}\n" +
                 "踢出时拉黑：${c.blockWhenKick}\n" +
-                "管理员列表：${c.admins}\n\n"
+                "管理员列表：${c.admins}\n" +
+                "不编码样本：${c.reportWithBase64Message}\n\n"
 
         val output2 = Keywords.restrictionLevels.withIndex().joinToString("\n\n") {
             "规则${it.index}（检测发言数量：${it.value.level}）：\n" +

@@ -5,9 +5,9 @@ import com.github.asforest.automute.config.Keywords
 import com.github.asforest.automute.config.MuteRecordConfig
 import com.github.asforest.automute.config.PluginConfig
 import com.github.asforest.automute.config.SpeakingsConfig
+import com.github.asforest.automute.util.EnvUtil
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.permission.PermissionService
-import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.MemberPermission
 import net.mamoe.mirai.contact.NormalMember
@@ -20,11 +20,8 @@ import okio.ByteString.Companion.encode
 import java.nio.charset.Charset
 import java.util.*
 
-object AutoMutePlugin : KotlinPlugin(JvmPluginDescription(
-    id = "com.github.asforest.automute",
-    version = "1.0.0",
-    name = "AutoMute",
-)) {
+object AutoMutePlugin : KotlinPlugin(EnvUtil.pluginDescription)
+{
     val permssion_mainCommand by lazy { PermissionService.INSTANCE.register(AutoMutePlugin.permissionId("all"), "AutoMutePlugin主指令") }
 
     override fun onEnable()
@@ -73,12 +70,15 @@ object AutoMutePlugin : KotlinPlugin(JvmPluginDescription(
             val isOutOfToleration = violations >= PluginConfig.toleration
 
             // 构建管理员报告消息
-            val rawMessageContentBase64 = Base64.getEncoder()
-                .encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
+            val rawSample = if (PluginConfig.reportWithBase64Message)
+                Base64.getEncoder().encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
+            else
+                msg
+
             val reportMessage = "检测到 $nick($qq) 在QQ群聊 ${group.name}(${group.id}) 的发言违反了关键字【${isViolated.keyword}】，" +
                     "次数($violations/${PluginConfig.toleration})" +
                     (if (isOutOfToleration) "(已踢出群聊)" else "（已禁言）") +
-                    "\n以下原始消息(base64)：\n$rawMessageContentBase64"
+                    "\n以下原始消息：\n$rawSample"
 
             // 向所有管理员报告
             for (adm in PluginConfig.admins) {

@@ -37,6 +37,11 @@ object PluginConfig: YamlConfig("config.yml")
      */
     var admins: MutableList<Long> = mutableListOf()
 
+    /**
+     * 向管理员报告违规信息时是否将原始消息样本使用Base64编码后发送
+     */
+    var reportWithBase64Message: Boolean = true
+
     override fun onLoad(deserialized: HashMap<String, Any>)
     {
         dryRun = deserialized["dry-run"] as Boolean
@@ -46,6 +51,7 @@ object PluginConfig: YamlConfig("config.yml")
         kickMessage = deserialized["kick-message"] as String
         blockWhenKick = deserialized["block-when-kick"] as Boolean
         admins = deserialized["admins"] as MutableList<Long>
+        reportWithBase64Message = deserialized["report-with-base64"] as Boolean
     }
 
     override fun onSave(serialized: HashMap<String, Any>)
@@ -57,5 +63,6 @@ object PluginConfig: YamlConfig("config.yml")
         serialized["kick-message"] = kickMessage
         serialized["block-when-kick"] = blockWhenKick
         serialized["admins"] = admins
+        serialized["report-with-base64"] = reportWithBase64Message
     }
 }
