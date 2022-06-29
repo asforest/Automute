@@ -7,7 +7,7 @@ val gitCommitSha: String? get() = System.getenv("GITHUB_SHA") ?: null
 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(Date()) as String
 
 group = "com.github.asforest"
-version = gitTagName ?: "0.0.0"
+version = System.getenv()["VERSION"] ?: gitTagName ?: "0.0.0"
 
 plugins {
     val kotlinVersion = "1.6.10"

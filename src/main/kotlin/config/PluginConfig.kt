@@ -40,7 +40,7 @@ object PluginConfig: YamlConfig("config.yml")
     /**
      * 向管理员报告违规信息时是否将原始消息样本使用Base64编码后发送
      */
-    var reportWithBase64Message: Boolean = true
+    var reportWithBase64Message: Boolean = false
 
     override fun onLoad(deserialized: HashMap<String, Any>)
     {
