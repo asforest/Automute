@@ -1,23 +1,23 @@
 package com.github.asforest.automute.config
 
 import com.github.asforest.automute.AutoMutePlugin
-import com.github.asforest.automute.util.FileObj
 import org.yaml.snakeyaml.Yaml
+import java.io.File
 
 abstract class YamlConfig(val filename: String)
 {
-    val pluginDataFolder: FileObj = FileObj(AutoMutePlugin.configFolder)
-    val configFile: FileObj = pluginDataFolder + filename
+    val pluginDataFolder = AutoMutePlugin.configFolder
+    val configFile = File(pluginDataFolder, filename)
 
     fun read(saveDefault: Boolean = false)
     {
-        if(saveDefault && !configFile.exists)
+        if(saveDefault && !configFile.exists())
             write()
 
-        if(configFile.exists)
+        if(configFile.exists())
         {
             val yaml = Yaml()
-            val deserialized = yaml.load<HashMap<String, Any>>(configFile.content)
+            val deserialized = yaml.load<HashMap<String, Any>>(configFile.readText())
             onLoad(deserialized)
         }
     }
@@ -28,7 +28,7 @@ abstract class YamlConfig(val filename: String)
         onSave(serialized)
 
         val serializedText = Yaml().dumpAsMap(serialized)
-        configFile.content = serializedText
+        configFile.writeText(serializedText)
     }
 
     protected abstract fun onLoad(deserialized: HashMap<String, Any>)

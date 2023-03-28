@@ -1,11 +1,11 @@
 package com.github.asforest.automute
 
-import com.github.asforest.automute.command.AutoMuteMainCommand
+import com.github.asforest.automute.command.MainCommand
 import com.github.asforest.automute.config.Keywords
 import com.github.asforest.automute.config.MuteRecordConfig
 import com.github.asforest.automute.config.PluginConfig
 import com.github.asforest.automute.config.SpeakingsConfig
-import com.github.asforest.automute.util.EnvUtil
+import com.github.asforest.automute.util.Env
 import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
 import net.mamoe.mirai.console.permission.PermissionService
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -16,11 +16,9 @@ import net.mamoe.mirai.event.events.BotEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
 import net.mamoe.mirai.message.data.content
-import okio.ByteString.Companion.encode
-import java.nio.charset.Charset
 import java.util.*
 
-object AutoMutePlugin : KotlinPlugin(EnvUtil.pluginDescription)
+object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
 {
     val permssion_mainCommand by lazy { PermissionService.INSTANCE.register(AutoMutePlugin.permissionId("all"), "AutoMutePlugin主指令") }
 
@@ -32,7 +30,7 @@ object AutoMutePlugin : KotlinPlugin(EnvUtil.pluginDescription)
         permssion_mainCommand
 
         // 注册指令
-        AutoMuteMainCommand.register()
+        MainCommand.register()
 
         GlobalEventChannel.filter { it is BotEvent }.subscribeAlways<GroupMessageEvent> {
             if(!PluginConfig.groupsActivated.any { it == group.id })
@@ -70,24 +68,49 @@ object AutoMutePlugin : KotlinPlugin(EnvUtil.pluginDescription)
             val isOutOfToleration = violations >= PluginConfig.toleration
 
             // 构建管理员报告消息
-            val rawSample = if (PluginConfig.reportWithBase64Message)
-                Base64.getEncoder().encodeToString(msg.encode(Charset.forName("utf-8")).toByteArray())
+            val sample = if (PluginConfig.reportWithBase64Message)
+                Base64.getEncoder().encodeToString(msg.encodeToByteArray())
             else
                 msg
 
-            val reportMessage = "检测到 $nick($qq) 在QQ群聊 ${group.name}(${group.id}) 的发言违反了关键字【${isViolated.keyword}】，" +
-                    "次数($violations/${PluginConfig.toleration})" +
-                    (if (isOutOfToleration) "(已踢出群聊)" else "（已禁言）") +
-                    "\n以下原始消息：\n$rawSample"
+            // 检查机器人是否有管理权限
+            val botPermission = this.group.botPermission;
+            val hasProvilege = botPermission == MemberPermission.OWNER || botPermission == MemberPermission.ADMINISTRATOR
+
+            val report = buildString {
+                appendLine("检测到 $nick($qq)")
+                appendLine("在QQ群聊 ${group.name}(${group.id}) 的发言")
+                appendLine("违反了关键字【${isViolated.keyword}】")
+                appendLine("这是第${violations}次，当达到第${PluginConfig.toleration}时会被请出群聊")
+
+                val actions = mutableListOf<String>()
+
+                if (hasProvilege)
+                {
+                    actions.add("撤回消息")
+                    if (isOutOfToleration)
+                        actions.add("请出群聊")
+                    else
+                        actions.add("已禁言")
+                } else {
+                    actions.add("没有群聊管理权限")
+                }
+
+                appendLine("当前动作：${actions.joinToString(" + ")}")
+                append("以下是")
+                append(if (PluginConfig.reportWithBase64Message) "base64编码后的" else "原始")
+                appendLine("消息：")
+                appendLine(sample)
+            }
 
             // 向所有管理员报告
             for (adm in PluginConfig.admins) {
                 val to = bot.getFriend(adm)
-                to?.sendMessage(reportMessage)
+                to?.sendMessage(report)
             }
 
             // 实际动作：撤回消息+禁言或者踢出
-            if (!PluginConfig.dryRun) {
+            if (!PluginConfig.dryRun && hasProvilege) {
                 message.recall()
 
                 if (isOutOfToleration) {
@@ -109,5 +132,4 @@ object AutoMutePlugin : KotlinPlugin(EnvUtil.pluginDescription)
 
         logger.info("Reloaded!")
     }
-
 }

@@ -1,12 +1,13 @@
 package com.github.asforest.automute.util
 
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
+import java.io.File
 import java.net.URLDecoder
 import java.util.jar.Attributes
 import java.util.jar.JarFile
 import java.util.jar.Manifest
 
-object EnvUtil
+object Env
 {
     private val MF: Map<String, String> = manifest
 
@@ -52,6 +53,6 @@ object EnvUtil
      * 获取当前Jar文件路径（仅打包后有效）
      */
     @JvmStatic
-    val jarFile: FileObj get() = FileObj(URLDecoder.decode(EnvUtil.javaClass.protectionDomain.codeSource.location.file, "UTF-8"))
+    val jarFile: File get() = File(URLDecoder.decode(Env.javaClass.protectionDomain.codeSource.location.file, "UTF-8"))
 
 }

@@ -7,7 +7,7 @@ import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.command.ConsoleCommandSender
 
-object AutoMuteMainCommand: CompositeCommand(
+object MainCommand: CompositeCommand(
     AutoMutePlugin,
     primaryName = "automute",
     description = "AutoMute主指令",
@@ -27,14 +27,15 @@ object AutoMuteMainCommand: CompositeCommand(
     suspend fun CommandSender.info()
     {
         val c = PluginConfig
-        val output = "仅通知管理: ${c.dryRun}\n" +
-                "生效的群聊：${c.groupsActivated}\n" +
-                "总谅解次数：${c.toleration}\n" +
-                "禁言时长秒：${c.muteDuration}\n" +
-                "踢出时消息：${c.kickMessage}\n" +
-                "踢出时拉黑：${c.blockWhenKick}\n" +
-                "管理员列表：${c.admins}\n" +
-                "不编码样本：${c.reportWithBase64Message}\n\n"
+        val output =
+                "插件无实际动作: ${c.dryRun}\n" +
+                "生效的群聊列表：${c.groupsActivated}\n" +
+                "踢出前禁言次数：${c.toleration}\n" +
+                "禁言时长单位秒：${c.muteDuration}\n" +
+                "踢出时附加消息：${c.kickMessage}\n" +
+                "踢出时是否拉黑：${c.blockWhenKick}\n" +
+                "管理员名单列表：${c.admins}\n" +
+                "编码消息样本：${!c.reportWithBase64Message}\n\n"
 
         val output2 = Keywords.restrictionLevels.withIndex().joinToString("\n\n") {
             "规则${it.index}（检测发言数量：${it.value.level}）：\n" +
