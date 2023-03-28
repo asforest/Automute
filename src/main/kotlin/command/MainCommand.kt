@@ -36,7 +36,8 @@ object MainCommand: CompositeCommand(
                 "踢出时附加消息：${c.kickMessage}\n" +
                 "踢出时是否拉黑：${c.blockWhenKick}\n" +
                 "管理员名单列表：${c.admins}\n" +
-                "编码消息样本：${!c.reportWithBase64Message}\n\n"
+                "编码消息样本：${!c.reportWithBase64Message}\n" +
+                "报告模板：\n====================\n${c.reportTemplate}\n====================\n"
 
         val output2 = Keywords.restrictionLevels.withIndex().joinToString("\n\n") {
             "规则${it.index}（检测发言数量：${it.value.level}）：\n" +

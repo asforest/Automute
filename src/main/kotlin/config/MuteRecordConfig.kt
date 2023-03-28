@@ -1,6 +1,7 @@
 package com.github.asforest.automute.config
 
 import com.github.asforest.automute.AutoMutePlugin.save
+import com.github.asforest.automute.util.Env
 import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.value
 
@@ -20,6 +21,8 @@ object MuteRecordConfig: AutoSavePluginConfig("mute-data")
      */
     fun addMutedCount(qq: Long) {
         muted[qq] = getMutedCount(qq) + 1
-        save()
+
+        if (Env.inDev)
+            save()
     }
 }

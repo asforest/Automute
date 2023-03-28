@@ -73,6 +73,16 @@ admins:
 # 关闭后发送原文
 # 发送原文会增加腾讯误判发布不良信息的风险，如果担心请启用base64编码
 report-with-base64: false
+
+# 报告消息的模板
+report-template: |
+  检测到 $SENDER_NAME($SENDER_QQ)
+  在QQ群聊 $GROUP_NAME($GROUP_NUMBER) 的发言
+  违反了关键字【$KEYWORD】
+  这是第$CURRENT_TIME次，当达到第$MAX_TIMES时会被请出群聊
+  当前动作：$ACTIONS
+  以下是消息样本：
+  $SAMPLE
 ```
 
 ### 插件指令

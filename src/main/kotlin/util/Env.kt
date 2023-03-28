@@ -33,7 +33,7 @@ object Env
     val originManifest: Attributes?
         get()
         {
-            if(!isPackaged)
+            if(inDev)
                 return null
 
             JarFile(jarFile.path).use { jar ->
@@ -47,7 +47,7 @@ object Env
      * 程序是否被打包
      */
     @JvmStatic
-    val isPackaged: Boolean get() = javaClass.getResource("").protocol != "file"
+    val inDev: Boolean get() = javaClass.getResource("")?.protocol == "file"
 
     /**
      * 获取当前Jar文件路径（仅打包后有效）

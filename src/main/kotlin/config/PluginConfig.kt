@@ -42,6 +42,18 @@ object PluginConfig: YamlConfig("config.yml")
      */
     var reportWithBase64Message: Boolean = false
 
+    /**
+     * 报告消息的模板
+     */
+    var reportTemplate: String =
+            "检测到 \$SENDER_NAME(\$SENDER_QQ)\n" +
+            "在QQ群聊 \$GROUP_NAME(\$GROUP_NUMBER) 的发言\n" +
+            "违反了关键字【\$KEYWORD】\n" +
+            "这是第\$CURRENT_TIME次，当达到第\$MAX_TIMES时会被请出群聊\n" +
+            "当前动作：\$ACTIONS\n" +
+            "以下是消息样本：\n" +
+            "\$SAMPLE"
+
     override fun onLoad(deserialized: HashMap<String, Any>)
     {
         dryRun = deserialized["dry-run"] as Boolean
@@ -52,6 +64,7 @@ object PluginConfig: YamlConfig("config.yml")
         blockWhenKick = deserialized["block-when-kick"] as Boolean
         admins = deserialized["admins"] as MutableList<Long>
         reportWithBase64Message = deserialized["report-with-base64"] as Boolean
+        reportTemplate = deserialized["report-template"] as String
     }
 
     override fun onSave(serialized: HashMap<String, Any>)
@@ -64,5 +77,6 @@ object PluginConfig: YamlConfig("config.yml")
         serialized["block-when-kick"] = blockWhenKick
         serialized["admins"] = admins
         serialized["report-with-base64"] = reportWithBase64Message
+        serialized["report-template"] = reportTemplate
     }
 }

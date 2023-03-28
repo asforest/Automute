@@ -77,31 +77,30 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
             val botPermission = this.group.botPermission;
             val hasProvilege = botPermission == MemberPermission.OWNER || botPermission == MemberPermission.ADMINISTRATOR
 
-            val report = buildString {
-                appendLine("检测到 $nick($qq)")
-                appendLine("在QQ群聊 ${group.name}(${group.id}) 的发言")
-                appendLine("违反了关键字【${isViolated.keyword}】")
-                appendLine("这是第${violations}次，当达到第${PluginConfig.toleration}时会被请出群聊")
+            // 构建报告消息
+            val actions = mutableListOf<String>()
 
-                val actions = mutableListOf<String>()
-
-                if (hasProvilege)
-                {
-                    actions.add("撤回消息")
-                    if (isOutOfToleration)
-                        actions.add("请出群聊")
-                    else
-                        actions.add("已禁言")
-                } else {
-                    actions.add("没有群聊管理权限")
-                }
-
-                appendLine("当前动作：${actions.joinToString(" + ")}")
-                append("以下是")
-                append(if (PluginConfig.reportWithBase64Message) "base64编码后的" else "原始")
-                appendLine("消息：")
-                appendLine(sample)
+            if (hasProvilege)
+            {
+                actions.add("撤回消息")
+                if (isOutOfToleration)
+                    actions.add("请出群聊")
+                else
+                    actions.add("禁言")
+            } else {
+                actions.add("没有群聊管理权限")
             }
+
+            val report = PluginConfig.reportTemplate
+                .replace("\$SENDER_NAME", nick)
+                .replace("\$SENDER_QQ", "$qq")
+                .replace("\$GROUP_NAME", group.name)
+                .replace("\$GROUP_NUMBER", "${group.id}")
+                .replace("\$KEYWORD", isViolated.keyword)
+                .replace("\$CURRENT_TIME次", "$violations")
+                .replace("\$MAX_TIMES", "${PluginConfig.toleration}")
+                .replace("\$ACTIONS", actions.joinToString(" + "))
+                .replace("\$SAMPLE", sample)
 
             // 向所有管理员报告
             for (adm in PluginConfig.admins) {
