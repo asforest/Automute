@@ -3,7 +3,8 @@ name: release publish
 on:
   push:
     tags:
-      - "v*"
+      - "*"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,7 +19,7 @@ jobs:
           distribution: zulu
 
       - name: Build
-        uses: gradle/gradle-build-action@v2.4.0
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: buildPlugin
 
