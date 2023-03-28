@@ -1,0 +1,32 @@
+name: release publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: zulu
+
+      - name: Build
+        uses: gradle/gradle-build-action@v2.4.0
+        with:
+          arguments: buildPlugin
+
+      - name: Publish
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: build/mirai/*
+          draft: false
+          tags: true
