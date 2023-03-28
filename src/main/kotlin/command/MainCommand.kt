@@ -6,6 +6,7 @@ import com.github.asforest.automute.config.PluginConfig
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.command.ConsoleCommandSender
+import java.util.*
 
 object MainCommand: CompositeCommand(
     AutoMutePlugin,
@@ -43,5 +44,17 @@ object MainCommand: CompositeCommand(
         }
 
         sendMessage(output + output2)
+    }
+
+    @SubCommand
+    @Description("解码一个base64消息样本(utf8)")
+    suspend fun CommandSender.decode(b64: String)
+    {
+        try {
+            val decoded = Base64.getDecoder().decode(b64.trim()).decodeToString()
+            sendMessage(decoded)
+        } catch (e: IllegalArgumentException) {
+            sendMessage("消息不是b64格式，解码失败")
+        }
     }
 }
