@@ -11,7 +11,7 @@ version = System.getenv()["VERSION"] ?: gitTagName ?: "0.0.0"
 
 plugins {
     val kotlinVersion = "1.6.10"
-    val miraiVersion = "2.11.0"
+    val miraiVersion = "2.14.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("net.mamoe.mirai-console") version miraiVersion
@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.yaml:snakeyaml:1.30")
+    implementation("org.yaml:snakeyaml:2.0")
 }
 
 afterEvaluate {
