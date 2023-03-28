@@ -87,10 +87,11 @@ report-template: |
 
 ### 插件指令
 
-插件只有两个指令（指令简写：`am`）：
+插件只有三个指令（指令简写：`am`）：
 
 + `/automute reload`：重新加载所有配置文件
 + `/automute info`：显示目前的配置文件内容和违规关键字
++ `/automute decode <base64>`：一个很方便的工具，用来解码base64字符串
 
 ### 其它配置文件
 
