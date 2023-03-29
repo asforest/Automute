@@ -33,11 +33,17 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
         MainCommand.register()
 
         GlobalEventChannel.filter { it is BotEvent }.subscribeAlways<GroupMessageEvent> {
+            // 只统计生效的群聊
             if(!PluginConfig.groupsActivated.any { it == group.id })
                 return@subscribeAlways
 
-            if(bot.getGroup(group.id)!!.botPermission == MemberPermission.MEMBER)
-                return@subscribeAlways
+            // 检查机器人是否有管理权限
+            val botPermission = this.group.botPermission;
+            val hasProvilege = botPermission == MemberPermission.OWNER || botPermission == MemberPermission.ADMINISTRATOR
+
+            // 检查发言者是否有管理权限
+            val senderPermission = sender.permission
+            val senderHasPrivilege = senderPermission == MemberPermission.OWNER || senderPermission == MemberPermission.ADMINISTRATOR
 
             val qq = sender.id
             val nick = sender.nick
@@ -54,8 +60,8 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
                 return@subscribeAlways
             }
 
-            // 只对普通群成员生效(管理员和群主无效)
-            if(sender.permission != MemberPermission.MEMBER)
+            // 只对普通群成员生效
+            if(senderHasPrivilege)
                 return@subscribeAlways
 
             // 曾经的违规次数
@@ -72,10 +78,6 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
                 Base64.getEncoder().encodeToString(msg.encodeToByteArray())
             else
                 msg
-
-            // 检查机器人是否有管理权限
-            val botPermission = this.group.botPermission;
-            val hasProvilege = botPermission == MemberPermission.OWNER || botPermission == MemberPermission.ADMINISTRATOR
 
             // 构建报告消息
             val actions = mutableListOf<String>()
