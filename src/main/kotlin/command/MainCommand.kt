@@ -1,8 +1,11 @@
 package com.github.asforest.automute.command
 
 import com.github.asforest.automute.AutoMutePlugin
+import com.github.asforest.automute.AutoMutePlugin.save
 import com.github.asforest.automute.config.Keywords
+import com.github.asforest.automute.config.MuteRecordConfig
 import com.github.asforest.automute.config.PluginConfig
+import com.github.asforest.automute.config.SpeakingsConfig
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 import net.mamoe.mirai.console.command.ConsoleCommandSender
@@ -57,5 +60,15 @@ object MainCommand: CompositeCommand(
         } catch (e: IllegalArgumentException) {
             sendMessage("消息不是b64格式，解码失败")
         }
+    }
+
+    @SubCommand
+    @Description("查看所有人的发言次数和违规次数")
+    suspend fun CommandSender.stats()
+    {
+        sendMessage(SpeakingsConfig.speakings.entries.joinToString("\n") {
+            val muted = MuteRecordConfig.getMutedCount(it.key)
+            "${it.key}：${it.value} 次发言" + if (muted > 0) "，$muted 次违规发言" else ""
+        })
     }
 }

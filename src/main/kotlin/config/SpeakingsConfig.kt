@@ -7,7 +7,7 @@ import net.mamoe.mirai.console.data.value
 
 object SpeakingsConfig : AutoSavePluginConfig("speakings")
 {
-    private var speakings: MutableMap<Long, Int> by value(mutableMapOf())
+    var speakings: MutableMap<Long, Int> by value(mutableMapOf())
 
     fun getSpeakings(qq: Long): Int
     {
