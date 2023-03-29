@@ -1,5 +1,10 @@
 ## Automute
 
+
+![GitHub top language](https://img.shields.io/github/languages/top/asforest/Automute)
+![Release](https://img.shields.io/github/v/release/asforest/Automute)
+![GitHub all releases](https://img.shields.io/github/downloads/asforest/Automute/total)
+
 Automute插件是适用于Mirai机器人的群聊自动禁言插件。可以使用正则表达式识别违规内容，自动撤回并禁言或者踢出（插件工作时需要群主或者管理员权限，如果没有权限只会进行通知，没有实际撤回消息和禁言的动作）
 
 ### 工作原理
