@@ -97,7 +97,7 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
                 .replace("\$GROUP_NAME", group.name)
                 .replace("\$GROUP_NUMBER", "${group.id}")
                 .replace("\$KEYWORD", isViolated.keyword)
-                .replace("\$CURRENT_TIME次", "$violations")
+                .replace("\$CURRENT_TIME", "$violations")
                 .replace("\$MAX_TIMES", "${PluginConfig.toleration}")
                 .replace("\$ACTIONS", actions.joinToString(" + "))
                 .replace("\$SAMPLE", sample)
@@ -120,6 +120,12 @@ object AutoMutePlugin : KotlinPlugin(Env.pluginDescription)
             }
 
         }
+    }
+
+    override fun onDisable()
+    {
+        SpeakingsConfig.save()
+        MuteRecordConfig.save()
     }
 
     fun reloadConf()
